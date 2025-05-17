@@ -1,0 +1,709 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+		"name": "Social Media API",
+		"description": "Postman collection for the Node.js, Express.js, and MongoDB Social Media App.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Authentication related endpoints",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    try {",
+									"        var jsonData = pm.response.json();",
+									"        if (jsonData.accessToken) {",
+									"            pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"            console.log(\"Access Token set from register response.\");",
+									"        }",
+									"        if (jsonData.refreshToken) {",
+									"            pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+									"            console.log(\"Refresh Token set from register response.\");",
+									"        }",
+									"        if (jsonData._id) {",
+									"             pm.collectionVariables.set(\"myUserId\", jsonData._id);",
+									"             console.log(\"My User ID set from register response.\");",
+									"        }",
+									"    } catch (e) {",
+									"        console.log(\"Error parsing response or setting token: \" + e);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"email\": \"testuser123@example.com\",\n    \"password\": \"password123\",\n    \"bio\": \"This is a test bio.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/register",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registers a new user. Profile picture is not uploaded here, use 'Update My Profile' for that."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        var jsonData = pm.response.json();",
+									"        if (jsonData.accessToken) {",
+									"            pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"            console.log(\"Access Token set from login response.\");",
+									"        }",
+									"        if (jsonData.refreshToken) {",
+									"            pm.collectionVariables.set(\"refreshToken\", jsonData.refreshToken);",
+									"            console.log(\"Refresh Token set from login response.\");",
+									"        }",
+									"        if (jsonData._id) {",
+									"             pm.collectionVariables.set(\"myUserId\", jsonData._id);",
+									"             console.log(\"My User ID set from login response.\");",
+									"        }",
+									"    } catch (e) {",
+									"        console.log(\"Error parsing response or setting token: \" + e);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"testuser123@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Logs in an existing user and returns access and refresh tokens."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    try {",
+									"        var jsonData = pm.response.json();",
+									"        if (jsonData.accessToken) {",
+									"            pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"            console.log(\"New Access Token set from refresh response.\");",
+									"        }",
+									"    } catch (e) {",
+									"        console.log(\"Error parsing response or setting new token: \" + e);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/refresh-token",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"refresh-token"
+							]
+						},
+						"description": "Gets a new access token using a valid refresh token."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/auth/logout",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logs out the current user by invalidating the refresh token on the server."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"description": "User profile and management endpoints",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/users/profile",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						},
+						"description": "Retrieves the profile of the currently authenticated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "firstName",
+									"value": "UpdatedFirstName",
+									"type": "text"
+								},
+								{
+									"key": "lastName",
+									"value": "UpdatedLastName",
+									"type": "text"
+								},
+								{
+									"key": "bio",
+									"value": "This is my updated bio.",
+									"type": "text"
+								},
+								{
+									"key": "profilePicture",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseURL}}/users/profile",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						},
+						"description": "Updates the profile of the currently authenticated user. Use form-data to upload a new profile picture."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/users",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Retrieves a list of all users. (Protected - ensure only admins or specific roles can access if needed)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/users/{{otherUserId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"users",
+								"{{otherUserId}}"
+							]
+						},
+						"description": "Retrieves the profile of a specific user by their ID. Update `{{otherUserId}}` collection variable."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Posts",
+			"description": "Endpoints for managing posts and their comments",
+			"item": [
+				{
+					"name": "Create New Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "content",
+									"value": "This is the content of my new post!",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseURL}}/posts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"posts"
+							]
+						},
+						"description": "Creates a new post. Use form-data to upload an image with the post."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/posts?page=1&pageSize=10",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"posts"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of all posts. (Public by default in this collection)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/posts/{{postId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"posts",
+								"{{postId}}"
+							]
+						},
+						"description": "Retrieves a single post by its ID. Update `{{postId}}` collection variable. (Public by default)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "content",
+									"value": "This is the updated content of my post.",
+									"type": "text"
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"description": "(Optional) New image for the post",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseURL}}/posts/{{postId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"posts",
+								"{{postId}}"
+							]
+						},
+						"description": "Updates an existing post owned by the authenticated user. Update `{{postId}}`."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseURL}}/posts/{{postId}}",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"posts",
+								"{{postId}}"
+							]
+						},
+						"description": "Deletes a post owned by the authenticated user. Update `{{postId}}`."
+					},
+					"response": []
+				},
+				{
+					"name": "Comments",
+					"item": [
+						{
+							"name": "Create Comment on Post",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "content",
+											"value": "This is a great comment!",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"description": "(Optional) Image for the comment",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseURL}}/posts/{{postId}}/comments",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"posts",
+										"{{postId}}",
+										"comments"
+									]
+								},
+								"description": "Adds a new comment to a specific post. Update `{{postId}}`."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Comment",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "content",
+											"value": "This is my updated comment.",
+											"type": "text"
+										},
+										{
+											"key": "image",
+											"type": "file",
+											"description": "(Optional) New image for the comment",
+											"src": []
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseURL}}/posts/{{postId}}/comments/{{commentId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"posts",
+										"{{postId}}",
+										"comments",
+										"{{commentId}}"
+									]
+								},
+								"description": "Updates an existing comment owned by the authenticated user. Update `{{postId}}` and `{{commentId}}`."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Comment",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseURL}}/posts/{{postId}}/comments/{{commentId}}",
+									"host": [
+										"{{baseURL}}"
+									],
+									"path": [
+										"posts",
+										"{{postId}}",
+										"comments",
+										"{{commentId}}"
+									]
+								},
+								"description": "Deletes a comment. Can be deleted by comment owner or post owner. Update `{{postId}}` and `{{commentId}}`."
+							},
+							"response": []
+						}
+					],
+					"description": "Endpoints for managing comments on posts"
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string",
+			"description": "Automatically set after successful login or registration."
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string",
+			"description": "Automatically set after successful login or registration."
+		},
+		{
+			"key": "myUserId",
+			"value": "",
+			"type": "string",
+			"description": "ID of the currently logged-in user, set after login/register."
+		},
+		{
+			"key": "otherUserId",
+			"value": "some_user_id_to_test_with",
+			"type": "string",
+			"description": "Manually set this to an existing user's ID to test Get User by ID."
+		},
+		{
+			"key": "postId",
+			"value": "some_post_id_to_test_with",
+			"type": "string",
+			"description": "Manually set this to an existing post's ID for post/comment operations."
+		},
+		{
+			"key": "commentId",
+			"value": "some_comment_id_to_test_with",
+			"type": "string",
+			"description": "Manually set this to an existing comment's ID for comment operations."
+		}
+	]
+}
