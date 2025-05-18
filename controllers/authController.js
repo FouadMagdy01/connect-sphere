@@ -1,7 +1,7 @@
-const asyncHandler = require('express-async-handler'); // Changed from asyncHandlerCtrl
-const User = require('../models/User'); 
-const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken'); // Corrected import
-const jwt = require('jsonwebtoken'); // Changed from jwtCtrl
+const asyncHandler = require('express-async-handler');
+const User = require('../models/User');
+const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -20,15 +20,12 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new Error('User already exists with this email');
     }
 
-    // Profile picture handling during registration (if req.file exists)
     let profilePicturePath;
     if (req.file) {
-        // Assuming local upload, path will be relative to how you serve static files
         profilePicturePath = `/uploads/${req.file.filename}`;
-        // If using Cloudinary, it would be req.file.path (the Cloudinary URL)
+        // If using Cloudinary, it would be req.file.path
         // profilePicturePath = req.file.path;
     }
-
 
     const user = await User.create({
         firstName,
@@ -36,16 +33,16 @@ const registerUser = asyncHandler(async (req, res) => {
         email,
         password, // Hashing is done by pre-save hook in User model
         bio: bio || '',
-        profilePicture: profilePicturePath // Use the path determined above
+        profilePicture: profilePicturePath
     });
 
     if (user) {
         const accessToken = generateAccessToken(user._id);
-        const newRefreshToken = generateRefreshToken(user._id); // Renamed for clarity
+        const newRefreshToken = generateRefreshToken(user._id);
 
         // Store refresh token in DB
         user.refreshToken = newRefreshToken;
-        await user.save({ validateBeforeSave: false }); // Skip validation as we are only updating token
+        await user.save({ validateBeforeSave: false });
 
         res.status(201).json({
             _id: user._id,
@@ -80,7 +77,7 @@ const loginUser = asyncHandler(async (req, res) => {
         const accessToken = generateAccessToken(user._id);
         const newRefreshToken = generateRefreshToken(user._id);
 
-        // Update refresh token in DB
+        // Update/Store refresh token in DB
         user.refreshToken = newRefreshToken;
         await user.save({ validateBeforeSave: false });
 
@@ -100,10 +97,10 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Get new access token using refresh token
+// @desc    Get new access token AND new refresh token using an existing refresh token (Token Rotation)
 // @route   POST /api/auth/refresh-token
 // @access  Public (requires refresh token)
-const refreshTokenHandler = asyncHandler(async (req, res) => { // Renamed to avoid conflict
+const refreshTokenHandler = asyncHandler(async (req, res) => {
     const { token: requestRefreshToken } = req.body;
 
     if (!requestRefreshToken) {
@@ -115,26 +112,42 @@ const refreshTokenHandler = asyncHandler(async (req, res) => { // Renamed to avo
         const decoded = jwt.verify(requestRefreshToken, process.env.JWT_REFRESH_SECRET);
         const user = await User.findById(decoded.id).select('+refreshToken');
 
-        if (!user || user.refreshToken !== requestRefreshToken) {
-            res.status(403);
-            throw new Error('Invalid or expired refresh token. Please log in again.');
+        if (!user) {
+            res.status(403); // Forbidden
+            throw new Error('Invalid refresh token. User not found.');
         }
 
+        if (user.refreshToken !== requestRefreshToken) {
+            // CRITICAL: Someone might be trying to reuse an old/compromised refresh token.
+            // Invalidate all refresh tokens for this user for security.
+            user.refreshToken = undefined; // Or an array of invalid tokens
+            await user.save({ validateBeforeSave: false });
+            res.status(403);
+            throw new Error('Invalid refresh token. Token reuse detected. Please log in again.');
+        }
+
+        // Generate new access token
         const newAccessToken = generateAccessToken(user._id);
-        // Optional: Implement refresh token rotation for enhanced security
-        // const newGeneratedRefreshToken = generateRefreshToken(user._id);
-        // user.refreshToken = newGeneratedRefreshToken;
-        // await user.save({ validateBeforeSave: false });
+        // Generate new refresh token (Token Rotation)
+        const newGeneratedRefreshToken = generateRefreshToken(user._id);
+
+        // Update the refresh token in the database with the new one
+        user.refreshToken = newGeneratedRefreshToken;
+        await user.save({ validateBeforeSave: false });
 
         res.json({
             accessToken: newAccessToken,
-            // refreshToken: newGeneratedRefreshToken, // if rotating
+            refreshToken: newGeneratedRefreshToken, // Send the new refresh token to the client
         });
 
     } catch (error) {
         console.error("Refresh token error:", error.message);
-        res.status(403);
-        throw new Error('Invalid or expired refresh token. Please log in again.');
+        // Ensure consistent error status for various failure reasons during refresh
+        if (!res.headersSent) { // Check if headers already sent (e.g. by token reuse block)
+             res.status(403); // Forbidden
+        }
+        // Avoid re-throwing if already handled, or re-throw a generic message
+        throw new Error(error.message.includes('Token reuse detected') ? error.message : 'Invalid or expired refresh token. Please log in again.');
     }
 });
 
@@ -144,7 +157,8 @@ const refreshTokenHandler = asyncHandler(async (req, res) => { // Renamed to avo
 const logoutUser = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
     if (user) {
-        user.refreshToken = undefined;
+        // Invalidate the refresh token on the server-side
+        user.refreshToken = undefined; // or null, or add to a blacklist
         await user.save({ validateBeforeSave: false });
     }
     res.status(200).json({ message: 'User logged out successfully' });

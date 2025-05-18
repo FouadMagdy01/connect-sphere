@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path'); // Node.js path module
-// const cloudinary = require('cloudinary').v2; // Uncomment if using Cloudinary
-// const { CloudinaryStorage } = require('multer-storage-cloudinary'); // Uncomment if using Cloudinary
+const cloudinary = require('cloudinary').v2; // Uncomment if using Cloudinary
+const { CloudinaryStorage } = require('multer-storage-cloudinary'); // Uncomment if using Cloudinary
 
 // --- Basic Multer setup for local storage ---
 // Configure storage
@@ -31,7 +31,7 @@ const upload = multer({
 });
 
 // --- Cloudinary Setup (Alternative to local storage) ---
-/*
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -55,5 +55,3 @@ const uploadCloudinary = multer({
 });
 
 module.exports = { upload, uploadCloudinary }; // Choose one or provide both
-*/
-module.exports = { upload }; // Export for local storage by default
